@@ -14,7 +14,7 @@
 
 # IF you change the base image, you need to rebuild all images (run with --force_rebuild)
 _DOCKERFILE_BASE = r"""
-FROM --platform={platform} ubuntu:22.04
+FROM --platform={platform} ubuntu:24.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
@@ -40,8 +40,25 @@ gfortran \
 pkg-config \
 libopenblas-dev \
 libblas-dev \
-liblapack-dev \
-&& rm -rf /var/lib/apt/lists/*
+liblapack-dev 
+# && rm -rf /var/lib/apt/lists/*
+
+# my-swe-agent stuff installs py-spy and copies over some profiling scripts
+RUN apt install -y autoconf libtool
+RUN git clone https://github.com/libunwind/libunwind.git \
+    && cd libunwind && git checkout v1.8.1 \
+    && autoreconf -i \
+    && ./configure \
+    && make && make install \
+    && ldconfig
+ENV LIBRARY_PATH="/usr/local/lib"
+# RUN apt install -y libunwind-dev
+RUN git config --global --add safe.directory '*'
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:$PATH"
+RUN . "$HOME/.cargo/env"
+RUN cargo install py-spy --features unwind
+RUN git config --global --add safe.directory '*'
 
 # Download and install conda
 # RUN wget 'https://repo.anaconda.com/miniconda/Miniconda3-py311_25.3.1-1-Linux-x86_64.sh
