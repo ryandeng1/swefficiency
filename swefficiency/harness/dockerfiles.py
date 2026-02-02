@@ -36,12 +36,18 @@ tzdata \
 python3-dev \
 python3-setuptools \
 gcc \
+gcc-11 \
+g++-11 \
 gfortran \
 pkg-config \
 libopenblas-dev \
 libblas-dev \
-liblapack-dev 
+liblapack-dev
 # && rm -rf /var/lib/apt/lists/*
+
+# Use g++-11 as default to maintain compatibility with older C++ code (e.g. pybind11 in scipy)
+RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100 \
+    && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 100
 
 # my-swe-agent stuff installs py-spy and copies over some profiling scripts
 RUN apt install -y autoconf libtool

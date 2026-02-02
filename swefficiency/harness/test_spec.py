@@ -421,6 +421,7 @@ def make_env_script_list(
 
     reqs_commands.append("conda clean --all -y")  # Clean up conda cache to save space
     reqs_commands.append(f"conda activate {env_name}")
+    reqs_commands.append("python -m pip install 'pip<25.2'")
 
     # Install additional packages if specified
     if "pip_packages" in specs:
