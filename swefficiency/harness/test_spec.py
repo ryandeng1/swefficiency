@@ -251,11 +251,12 @@ def make_repo_script_list(
         f"git reset --hard {base_commit}",
         # Remove the remote so the agent won't see newer commits.
         "git remote remove origin",
-        "git tag -d $(git tag -l)",
+        # Remove only tags pointing to commits after the base commit
+        f"TARGET_TIMESTAMP=$(git show -s --format=%ci {base_commit})",
+        'git tag -l | while read tag; do TAG_COMMIT=$(git rev-list -n 1 "$tag"); TAG_TIME=$(git show -s --format=%ci "$TAG_COMMIT"); if [[ "$TAG_TIME" > "$TARGET_TIMESTAMP" ]]; then git tag -d "$tag"; fi; done',
         "git reflog expire --expire=now --all",
         "git gc --prune=now --aggressive",
         # Verify future logs aren't available
-        f"TARGET_TIMESTAMP=$(git show -s --format=%ci {base_commit})",
         "AFTER_TIMESTAMP=$(date -d \"$TARGET_TIMESTAMP + 1 second\" '+%Y-%m-%d %H:%M:%S')",
         'COMMIT_COUNT=$(git log --oneline --all --since="$AFTER_TIMESTAMP" | wc -l)',
         '[ "$COMMIT_COUNT" -eq 0 ] || exit 1',
@@ -421,7 +422,7 @@ def make_env_script_list(
 
     reqs_commands.append("conda clean --all -y")  # Clean up conda cache to save space
     reqs_commands.append(f"conda activate {env_name}")
-    reqs_commands.append("python -m pip install 'pip<25.2'")
+    reqs_commands.append("python -m pip install 'pip<25.2' 'wheel<0.46'")
 
     # Install additional packages if specified
     if "pip_packages" in specs:
